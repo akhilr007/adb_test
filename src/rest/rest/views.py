@@ -10,11 +10,24 @@ db = MongoClient(mongo_uri)['test_db']
 
 class TodoListView(APIView):
 
+    collection_name = "todos"
+
+    def __init__(self):
+        super().__init__()
+        self.ensure_collection()
+
+    def ensure_collection(self):
+        if self.collection_name not in db.list_collection_names():
+            db.create_collection(self.collection_name)
+
     def get(self, request):
-        # Implement this method - return all todo items from db instance above.
-        return Response({}, status=status.HTTP_200_OK)
+        todos = db.todos.find({}, {'_id': 0})  # Retrieve all todos from the MongoDB collection
+        print(todos)
+        todo_list = [todo for todo in todos]  # Convert the retrieved todos into a list
+        return Response(todo_list, status=status.HTTP_200_OK)
         
     def post(self, request):
-        # Implement this method - accept a todo item in a mongo collection, persist it using db instance above.
-        return Response({}, status=status.HTTP_200_OK)
+        todo = request.data.get('todo')
+        db[self.collection_name].insert_one({"todo": todo})
+        return Response({"data": todo,"message": "todo created successfully"}, status=status.HTTP_200_OK)
 
